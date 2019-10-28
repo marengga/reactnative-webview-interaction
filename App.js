@@ -1,114 +1,120 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow
- */
+import React, { Component } from 'react';
+import { View, Text, StyleSheet, Button } from 'react-native';
+import { WebView } from 'react-native-webview';
 
-import React from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar,
-} from 'react-native';
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      title: "Web View Interaction",
+      content: "",
+      loadingProgress: "Currently loading WebView, please wait ..",
+      webUrl: "https://marengga.com/reactnative-webview-interaction.html"
+    };
+    this.onWebViewMessage = this.onWebViewMessage.bind(this);
+  }
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  handleDataReceived(msgData) {
+    this.setState({
+      content: `Message from WebView: ${msgData.data}`
+    });
+    msgData.isSuccessfull = true;
+    msgData.args = [msgData.data % 2 ? "odd" : "even"];
+    this.myWebView.injectJavaScript(`window.postMessage('${JSON.stringify(msgData)}', '*');`);
+  }
 
-const App: () => React$Node = () => {
-  return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
+  onWebViewMessage(event) {
+    console.log("Message received from webview");
+
+    let msgData;
+    try {
+      msgData = JSON.parse(event.nativeEvent.data);
+    } catch (err) {
+      console.warn(err);
+      return;
+    }
+
+    switch (msgData.targetFunc) {
+      case "handleDataReceived":
+        this[msgData.targetFunc].apply(this, [msgData]);
+        break;
+    }
+  }
+
+  startLoading() {
+    this.setState({ loadingProgress: "Currently loading WebView, please wait .." });
+  }
+
+  finishLoading() {
+    this.setState({ loadingProgress: "WebView loaded" });
+  }
+
+  sendDataToWebView() {
+    // msgData.isSuccessfull = true;
+    msgData.args = "green";
+    this.myWebView.injectJavaScript(`window.postMessage('${JSON.stringify(msgData)}', '*');`);
+  }
+
+  render() {
+    // const webUrl = "https://marengga.com/reactnative-webview-interaction.html";
+
+    return (
+      <View style={styles.container}>
+        <View style={styles.appContainer}>
+          <Text style={styles.title}>{this.state.title}</Text>
+          <Text style={styles.content}>{this.state.loadingProgress}</Text>
+          <Text style={styles.content}>{this.state.content}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 }}>
+            <Button
+              title="Change to other url"
+              onPress={() => this.setState({ webUrl: "https://nytimes.com" })} />
+            <Button
+              title="Back to our url"
+              onPress={() => this.setState({ webUrl: "https://marengga.com/reactnative-webview-interaction.html" })} />
           </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
-  );
-};
+        </View>
+        <View style={styles.webViewContainer}>
+          <WebView
+            ref={webview => {
+              this.myWebView = webview;
+            }}
+            scrollEnabled={false}
+            source={{ uri: this.state.webUrl }}
+            onMessage={this.onWebViewMessage}
+            onLoadStart={() => this.startLoading()}
+            onLoad={() => this.finishLoading()}
+          />
+        </View>
+      </View>
+    );
+  }
+}
 
 const styles = StyleSheet.create({
-  scrollView: {
-    backgroundColor: Colors.lighter,
+  container: {
+    flex: 1,
+    justifyContent: "center"
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
+  appContainer: {
+    flex: 1,
+    backgroundColor: "#555"
   },
-  body: {
-    backgroundColor: Colors.white,
+  webViewContainer: {
+    flex: 2,
+    marginBottom: 0
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  title: {
+    paddingVertical: 20,
+    fontSize: 20,
+    textAlign: "center",
+    color: "white"
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
-  },
+  content: {
+    paddingVertical: 5,
+    textAlign: "center",
+    backgroundColor: "#555",
+    color: "white"
+  }
 });
 
 export default App;
