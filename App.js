@@ -67,7 +67,7 @@ class App extends Component {
           <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 }}>
             <Button
               title="Change to other url"
-              onPress={() => this.setState({ webUrl: "https://nytimes.com" })} />
+              onPress={() => this.setState({ webUrl: "https://www.bmw.com.au/en/index.html" })} />
             <Button
               title="Back to our url"
               onPress={() => this.setState({ webUrl: "https://marengga.com/reactnative-webview-interaction.html" })} />
